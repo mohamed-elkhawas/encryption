@@ -1,0 +1,227 @@
+import os
+import string
+import numpy as np
+
+def find_position(key_m,char):
+    x=0
+    y=0
+    for i in range(5):
+        for j in range(5):
+            if key_m[i][j]==char:
+                y=i
+                x=j
+
+            if "j" == char:
+                if key_m[i][j]=="i":
+                    y=i
+                    x=j
+    return x,y
+
+def caesar_enc(input_txt, key):
+    str = ""
+    for char in input_txt:
+        if (char.isupper()):
+            str += chr(((ord(char) - 65 + int(key)) % 26) + 65)
+        else:
+            str += chr(((ord(char) - 97 + int(key) ) % 26) + 97)
+    return str
+
+def playfair_enc(input_txt, key):
+
+    output = ""
+    the_rest = string.ascii_lowercase
+    the_rest = the_rest.replace("j", "")
+    key_s = ""
+    key_m =[]
+
+
+    key = key.replace("j", "i")
+    key_2 = key
+    for i in range(key.__len__()):
+        key = key.replace(key[0], "") + key[0]
+        if key[0] == key_2[0]:
+            break
+
+
+    for char in key:
+        if (char.isupper()):
+            char = char.swapcase()
+        key_s += char
+        the_rest = the_rest.replace(char , "")
+
+    all_s = key_s + the_rest
+
+    for i in range(5):
+        key_m.append(all_s[i*5 : i*5 + 5 ])
+
+    #key_m is ready
+
+
+    for i in range( input_txt.__len__()-1):
+
+        if(input_txt[i]==input_txt[i+1]):
+            input_txt = input_txt[:i+1]+"x"+input_txt[i+1:]
+
+    if ((input_txt.__len__() % 2) == 0):
+        input_txt = input_txt + "x"
+
+    #print(input_txt)
+
+    #start encryption
+
+    for i in range(0, input_txt.__len__()-1,2):
+        pos1x , pos1y = find_position(key_m,input_txt[i])
+        pos2x , pos2y = find_position(key_m,input_txt[i+1])
+
+        if pos1y == pos2y: # same row
+
+            output += key_m[pos1y][(pos1x + 1)%5]
+            output += key_m[pos1y][(pos2x + 1)%5]
+
+        elif pos1x == pos2x: # same column
+
+            output += key_m[(pos1y + 1)%5][pos1x]
+            output += key_m[(pos2y + 1)%5][pos2x]
+
+        else:
+            output += key_m[pos1y][pos2x]
+            output += key_m[pos2y][pos1x]
+
+    # print(key_m[0])
+    # print(key_m[1])
+    # print(key_m[2])
+    # print(key_m[3])
+    # print(key_m[4])
+
+    return output
+
+def vigenere_enc(input_txt, key,mode):
+    output = ""
+    key_length = key.__len__()
+    input_length = input_txt.__len__()
+
+    if mode == "pie":
+        for i in range(input_length):
+            output += chr( ( ( ord(input_txt[i]) - 97 + ord(key[i % key_length]) - 97 ) % 26  ) + 97)
+
+    else:
+        for i in range(input_length - key_length):
+            key += input_txt[ i % input_length]
+
+        for i in range(input_length):
+            output += chr( ( ( ord(input_txt[i]) - 97 + ord(key[i]) - 97 ) % 26  ) + 97)
+
+    return output
+
+def hill_enc(input_txt, key):
+    output = ""
+    key_width = int(len(key) ** 0.5)
+    input_arr = []
+    for char in input_txt :
+        input_arr.append(ord(char)-97)
+
+    if ((len(input_arr) % key_width ) != 0 ):
+        for i in range(key_width - (len(input_arr) % key_width )):
+            input_arr.append(ord("x") - 97)
+
+
+
+    input_arr = np.reshape(input_arr,(int(len(input_arr)/key_width),key_width))
+    # print(input_arr)
+
+    # for i in range(0,input_txt.__len__(),key_width) :
+    #     for j in range( key_width):
+    #         input_arr[i].append(ord(input_txt[i+j])-97)
+
+    key = np.reshape(key,(key_width,key_width))
+    # print(key)
+
+    for i in range (len(input_arr)):
+        for j in range(len(input_arr[i])):
+            temp =0
+            for k in range(len(input_arr[i])):
+                temp += input_arr[i][k] * key[j][k]
+            output += chr((temp % 26)+97)
+
+    # holder =0
+    # for i in range (input_txt.__len__()):
+    #     holder += (ord(input_txt[i])-97) * key[i % len(key)]
+    #     if (i % key_width == 0):
+    #         output += chr(holder+97)
+    #         holder = 0
+    #x=np.multiply(input_arr, key)
+
+    # print(input_arr[1])
+    # print(key)
+    # print(ord(output[2])-97 ,"  " ,ord(output[3])-97 )1
+
+
+    return output
+
+def vernam_enc(input_txt, key):
+    output = ""
+
+    if (input_txt.__len__() != key.__len__()):
+        return ""
+
+    for i in range(input_txt.__len__()):
+
+        if input_txt[i].islower():
+            output += chr(((ord(input_txt[i]) - 97) ^ (ord(key[i]) - 97)) + 97)
+        else:
+            output += chr(((ord(input_txt[i]) - ord('A')) ^ (ord(key[i]) - ord('A'))) + ord('A'))
+
+    return output
+
+def encrypt(str,input_txt,key,mode):
+    if str == "caesar" :
+        return caesar_enc(input_txt, key)
+
+    elif str == "playfair":
+        return playfair_enc(input_txt, key)
+
+    elif str == "vigenere":
+        return vigenere_enc(input_txt, key,mode)
+
+    elif str == "hill":
+        return hill_enc(input_txt, key)
+
+    elif str == "vernam":
+        return vernam_enc(input_txt, key)
+    else:
+        return "wrong cipher name"
+
+# the main
+
+directory = os.path.dirname(os.path.realpath(__file__))
+
+for file in os.listdir(directory):
+    filename = os.fsdecode(file)
+    if filename.endswith(".txt") and not filename.startswith("output of "):
+        with open(directory.replace("\\", "/") + "/" + filename, "r") as f:
+            with open(directory.replace("\\", "/") + "/" + "output of " + filename, "w") as f2:
+                lines = f.readlines()
+
+                print("for ", filename)
+                print("the available encryption methods are :")
+                print("caesar   -   playfair    -   vigenere    -   hill    -   vernam")
+                method = input("enter the encryption method name :    ")
+                while((method != "caesar" ) and (method != "playfair" ) and (method != "vigenere" ) and (method != "hill" ) and (method != "vernam" )):
+                    method = input("worng method name choose again :    ")
+                if method == "hill":
+                    key = []
+                    keyn = input("enter the key lengh:    ")
+                    print("start entering the key")
+                    for i in range(int(keyn)):
+                        key.append(int(input(("{} {}".format(i+1,": ")))))
+                else:
+                    key = input("enter the key :    ")
+                mode = ""
+                if method == "vigenere":
+                    mode = input("enter the mode :    ")
+                for line in lines:
+                    line= line.replace("\n","")
+                    out = encrypt(method,line, key,mode)
+                    if(out != "wrong cipher name"):
+                        f2.write(out+"\n")
+                print("the output was written in:","output of" , filename)
